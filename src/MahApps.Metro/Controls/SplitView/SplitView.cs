@@ -1,6 +1,7 @@
 ﻿namespace MahApps.Metro.Controls
 {
     using System;
+    using System.Collections;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Input;
@@ -37,7 +38,7 @@
         {
             var sender = d as SplitView;
             sender?.TemplateSettings?.Update();
-            sender?.ChangeVisualState();
+            sender?.ChangeVisualState(true, true);
         }
 
         /// <summary>
@@ -154,7 +155,7 @@
         /// </summary>
         /// <returns>The identifier for the <see cref="Pane" /> dependency property.</returns>
         public static readonly DependencyProperty PaneProperty =
-            DependencyProperty.Register("Pane", typeof(UIElement), typeof(SplitView), new PropertyMetadata(null));
+            DependencyProperty.Register("Pane", typeof(UIElement), typeof(SplitView), new PropertyMetadata(null, UpdateLogicalChild));
 
         /// <summary>
         ///     Gets or sets the contents of the pane of a <see cref="SplitView" />.
@@ -280,6 +281,46 @@
             }
         }
 
+        private static void UpdateLogicalChild(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
+        {
+            if (!(dependencyObject is SplitView splitView))
+            {
+                return;
+            }
+
+            if (e.OldValue is FrameworkElement oldChild)
+            {
+                splitView.RemoveLogicalChild(oldChild);
+            }
+
+            if (e.NewValue is FrameworkElement newChild)
+            {
+                splitView.AddLogicalChild(newChild);
+                newChild.DataContext = splitView.DataContext;
+            }
+        }
+
+        /// <inheritdoc />
+        protected override IEnumerator LogicalChildren
+        {
+            get
+            {
+                // cheat, make a list with all logical content and return the enumerator
+                ArrayList children = new ArrayList();
+                if (this.Pane != null)
+                {
+                    children.Add(this.Pane);
+                }
+
+                if (this.Content != null)
+                {
+                    children.Add(this.Content);
+                }
+
+                return children.GetEnumerator();
+            }
+        }
+
         protected override void OnRenderSizeChanged(SizeChangedInfo info)
         {
             base.OnRenderSizeChanged(info);
@@ -289,7 +330,7 @@
             }
         }
 
-        protected virtual void ChangeVisualState(bool animated = true)
+        protected virtual void ChangeVisualState(bool animated = true, bool reset = false)
         {
             if (this.paneClipRectangle != null)
             {
@@ -323,7 +364,11 @@
                 }
             }
 
-            VisualStateManager.GoToState(this, "None", animated);
+            if (reset)
+            {
+                VisualStateManager.GoToState(this, "None", animated);
+            }
+
             VisualStateManager.GoToState(this, state, animated);
         }
 

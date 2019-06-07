@@ -50,6 +50,16 @@ namespace MahApps.Metro.Controls
         }
 
         /// <summary>
+        /// Identifies the <see cref="PaneMargin"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty PaneMarginProperty = DependencyProperty.Register(nameof(PaneMargin), typeof(Thickness), typeof(HamburgerMenu), new PropertyMetadata(null));
+
+        /// <summary>
+        /// Identifies the <see cref="PaneHeaderMargin"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty PaneHeaderMarginProperty = DependencyProperty.Register(nameof(PaneHeaderMargin), typeof(Thickness), typeof(HamburgerMenu), new PropertyMetadata(null));
+
+        /// <summary>
         /// Identifies the <see cref="PaneBackground"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty PaneBackgroundProperty = DependencyProperty.Register(nameof(PaneBackground), typeof(Brush), typeof(HamburgerMenu), new PropertyMetadata(null));
@@ -81,6 +91,11 @@ namespace MahApps.Metro.Controls
         /// Identifies the <see cref="ItemContainerStyle"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty ItemContainerStyleProperty = DependencyProperty.Register(nameof(ItemContainerStyle), typeof(Style), typeof(HamburgerMenu), new PropertyMetadata(null));
+
+        /// <summary>
+        /// Identifies the <see cref="SeparatorItemContainerStyle"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty SeparatorItemContainerStyleProperty = DependencyProperty.Register(nameof(SeparatorItemContainerStyle), typeof(Style), typeof(HamburgerMenu), new PropertyMetadata(null));
 
         /// <summary>
         /// Identifies the <see cref="ItemTemplate"/> dependency property.
@@ -171,6 +186,24 @@ namespace MahApps.Metro.Controls
         }
 
         /// <summary>
+        /// Gets or sets the margin for the pane.
+        /// </summary>
+        public Thickness PaneMargin
+        {
+            get { return (Thickness)GetValue(PaneMarginProperty); }
+            set { SetValue(PaneMarginProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the margin for the pane header.
+        /// </summary>
+        public Thickness PaneHeaderMargin
+        {
+            get { return (Thickness)GetValue(PaneHeaderMarginProperty); }
+            set { SetValue(PaneHeaderMarginProperty, value); }
+        }
+
+        /// <summary>
         /// Gets or sets the Brush to apply to the background of the Pane area of the control.
         /// </summary>
         public Brush PaneBackground
@@ -213,6 +246,15 @@ namespace MahApps.Metro.Controls
         {
             get { return (Style)GetValue(ItemContainerStyleProperty); }
             set { SetValue(ItemContainerStyleProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the Style used for each separator item.
+        /// </summary>
+        public Style SeparatorItemContainerStyle
+        {
+            get { return (Style)GetValue(SeparatorItemContainerStyleProperty); }
+            set { SetValue(SeparatorItemContainerStyleProperty, value); }
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation.Peers;
@@ -16,16 +18,35 @@ namespace MahApps.Metro.Controls.Dialogs
     /// </summary>
     public abstract class BaseMetroDialog : ContentControl
     {
-        public static readonly DependencyProperty TitleProperty = DependencyProperty.Register("Title", typeof(string), typeof(BaseMetroDialog), new PropertyMetadata(default(string)));
-        public static readonly DependencyProperty DialogTopProperty = DependencyProperty.Register("DialogTop", typeof(object), typeof(BaseMetroDialog), new PropertyMetadata(null));
-        public static readonly DependencyProperty DialogBottomProperty = DependencyProperty.Register("DialogBottom", typeof(object), typeof(BaseMetroDialog), new PropertyMetadata(null));
-        public static readonly DependencyProperty DialogTitleFontSizeProperty = DependencyProperty.Register("DialogTitleFontSize", typeof(double), typeof(BaseMetroDialog), new PropertyMetadata(26D));
-        public static readonly DependencyProperty DialogMessageFontSizeProperty = DependencyProperty.Register("DialogMessageFontSize", typeof(double), typeof(BaseMetroDialog), new PropertyMetadata(15D));
-
-        public MetroDialogSettings DialogSettings { get; private set; }
+        /// <summary>Identifies the <see cref="DialogContentMargin"/> dependency property.</summary>
+        public static readonly DependencyProperty DialogContentMarginProperty = DependencyProperty.Register(nameof(DialogContentMargin), typeof(GridLength), typeof(BaseMetroDialog), new PropertyMetadata(new GridLength(25, GridUnitType.Star)));
 
         /// <summary>
-        /// Gets/sets the dialog's title.
+        /// Gets or sets the left and right margin for the dialog content.
+        /// </summary>
+        public GridLength DialogContentMargin
+        {
+            get { return (GridLength)this.GetValue(DialogContentMarginProperty); }
+            set { this.SetValue(DialogContentMarginProperty, value); }
+        }
+
+        /// <summary>Identifies the <see cref="DialogContentWidth"/> dependency property.</summary>
+        public static readonly DependencyProperty DialogContentWidthProperty = DependencyProperty.Register(nameof(DialogContentWidth), typeof(GridLength), typeof(BaseMetroDialog), new PropertyMetadata(new GridLength(50, GridUnitType.Star)));
+
+        /// <summary>
+        /// Gets or sets the width for the dialog content.
+        /// </summary>
+        public GridLength DialogContentWidth
+        {
+            get { return (GridLength)this.GetValue(DialogContentWidthProperty); }
+            set { this.SetValue(DialogContentWidthProperty, value); }
+        }
+
+        /// <summary>Identifies the <see cref="Title"/> dependency property.</summary>
+        public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(nameof(Title), typeof(string), typeof(BaseMetroDialog), new PropertyMetadata(default(string)));
+
+        /// <summary>
+        /// Gets or sets the title of the dialog.
         /// </summary>
         public string Title
         {
@@ -33,8 +54,11 @@ namespace MahApps.Metro.Controls.Dialogs
             set { this.SetValue(TitleProperty, value); }
         }
 
+        /// <summary>Identifies the <see cref="DialogTop"/> dependency property.</summary>
+        public static readonly DependencyProperty DialogTopProperty = DependencyProperty.Register(nameof(DialogTop), typeof(object), typeof(BaseMetroDialog), new PropertyMetadata(null, UpdateLogicalChild));
+
         /// <summary>
-        /// Gets/sets arbitrary content on top of the dialog.
+        /// Gets or sets the content above the dialog.
         /// </summary>
         public object DialogTop
         {
@@ -42,8 +66,11 @@ namespace MahApps.Metro.Controls.Dialogs
             set { this.SetValue(DialogTopProperty, value); }
         }
 
+        /// <summary>Identifies the <see cref="DialogBottom"/> dependency property.</summary>
+        public static readonly DependencyProperty DialogBottomProperty = DependencyProperty.Register(nameof(DialogBottom), typeof(object), typeof(BaseMetroDialog), new PropertyMetadata(null, UpdateLogicalChild));
+
         /// <summary>
-        /// Gets/sets arbitrary content below the dialog.
+        /// Gets or sets the content below the dialog.
         /// </summary>
         public object DialogBottom
         {
@@ -51,29 +78,31 @@ namespace MahApps.Metro.Controls.Dialogs
             set { this.SetValue(DialogBottomProperty, value); }
         }
 
+        /// <summary>Identifies the <see cref="DialogTitleFontSize"/> dependency property.</summary>
+        public static readonly DependencyProperty DialogTitleFontSizeProperty = DependencyProperty.Register(nameof(DialogTitleFontSize), typeof(double), typeof(BaseMetroDialog), new PropertyMetadata(26D));
+
         /// <summary>
-        /// Gets or sets the size of the dialog title font.
+        /// Gets or sets the font size of the dialog title.
         /// </summary>
-        /// <value>
-        /// The size of the dialog title font.
-        /// </value>
         public double DialogTitleFontSize
         {
             get { return (double)this.GetValue(DialogTitleFontSizeProperty); }
             set { this.SetValue(DialogTitleFontSizeProperty, value); }
         }
 
+        /// <summary>Identifies the <see cref="DialogMessageFontSize"/> dependency property.</summary>
+        public static readonly DependencyProperty DialogMessageFontSizeProperty = DependencyProperty.Register(nameof(DialogMessageFontSize), typeof(double), typeof(BaseMetroDialog), new PropertyMetadata(15D));
+
         /// <summary>
-        /// Gets or sets the size of the dialog message font.
+        /// Gets or sets the font size of the dialog message text.
         /// </summary>
-        /// <value>
-        /// The size of the dialog message font.
-        /// </value>
         public double DialogMessageFontSize
         {
             get { return (double)this.GetValue(DialogMessageFontSizeProperty); }
             set { this.SetValue(DialogMessageFontSizeProperty, value); }
         }
+
+        public MetroDialogSettings DialogSettings { get; private set; }
 
         internal SizeChangedEventHandler SizeChangedHandler { get; set; }
 
@@ -83,7 +112,7 @@ namespace MahApps.Metro.Controls.Dialogs
         }
 
         /// <summary>
-        /// Initializes a new MahApps.Metro.Controls.BaseMetroDialog.
+        /// Initializes a new <see cref="BaseMetroDialog"/>.
         /// </summary>
         /// <param name="owningWindow">The window that is the parent of the dialog.</param>
         /// <param name="settings">The settings for the message dialog.</param>
@@ -93,11 +122,56 @@ namespace MahApps.Metro.Controls.Dialogs
         }
 
         /// <summary>
-        /// Initializes a new MahApps.Metro.Controls.BaseMetroDialog.
+        /// Initializes a new <see cref="BaseMetroDialog"/>.
         /// </summary>
         protected BaseMetroDialog()
             : this(null, new MetroDialogSettings())
         {
+        }
+
+        private static void UpdateLogicalChild(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
+        {
+            if (!(dependencyObject is BaseMetroDialog dialog))
+            {
+                return;
+            }
+
+            if (e.OldValue is FrameworkElement oldChild)
+            {
+                dialog.RemoveLogicalChild(oldChild);
+            }
+
+            if (e.NewValue is FrameworkElement newChild)
+            {
+                dialog.AddLogicalChild(newChild);
+                newChild.DataContext = dialog.DataContext;
+            }
+        }
+
+        /// <inheritdoc />
+        protected override IEnumerator LogicalChildren
+        {
+            get
+            {
+                // cheat, make a list with all logical content and return the enumerator
+                ArrayList children = new ArrayList();
+                if (this.DialogTop != null)
+                {
+                    children.Add(this.DialogTop);
+                }
+
+                if (this.Content != null)
+                {
+                    children.Add(this.Content);
+                }
+
+                if (this.DialogBottom != null)
+                {
+                    children.Add(this.DialogBottom);
+                }
+
+                return children.GetEnumerator();
+            }
         }
 
         /// <summary>
@@ -143,63 +217,54 @@ namespace MahApps.Metro.Controls.Dialogs
             this.HandleThemeChange();
         }
 
-        private static object TryGetResource(Accent accent, AppTheme theme, string key)
+        private static object TryGetResource(MahApps.Metro.Theme theme, string key)
         {
-            if (accent == null || theme == null)
+            if (theme == null)
             {
                 // nothing to do here, we can't found an app style (make sure all custom themes are added!)
                 return null;
             }
 
-            object themeResource = theme.Resources[key]; //check the theme first
-
-            //next check the accent
-            var accentResource = accent.Resources[key];
-            if (accentResource != null)
-            {
-                return accentResource;
-            }
+            object themeResource = theme.Resources[key];
 
             return themeResource;
         }
 
         internal void HandleThemeChange()
         {
-            var windowTheme = DetectTheme(this);
+            var theme = DetectTheme(this);
 
-            if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this) || windowTheme == null)
+            if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)
+                || theme == null)
             {
                 return;
             }
-
-            Accent windowAccent = windowTheme.Item2;
-            AppTheme theme = windowTheme.Item1;
 
             if (this.DialogSettings != null)
             {
                 switch (this.DialogSettings.ColorScheme)
                 {
                     case MetroDialogColorScheme.Theme:
-                        ThemeManager.ChangeAppStyle(this.Resources, windowAccent, theme);
-                        this.SetValue(BackgroundProperty, TryGetResource(windowAccent, theme, "WhiteColorBrush"));
-                        this.SetValue(ForegroundProperty, TryGetResource(windowAccent, theme, "BlackBrush"));
+                        ThemeManager.ChangeTheme(this.Resources, theme);
+                        this.SetValue(BackgroundProperty, TryGetResource(theme, "WhiteColorBrush"));
+                        this.SetValue(ForegroundProperty, TryGetResource(theme, "BlackBrush"));
                         break;
                     case MetroDialogColorScheme.Inverted:
-                        theme = ThemeManager.GetInverseAppTheme(theme);
+                        theme = ThemeManager.GetInverseTheme(theme);
                         if (theme == null)
                         {
                             throw new InvalidOperationException("The inverse dialog theme only works if the window theme abides the naming convention. " +
                                                                 "See ThemeManager.GetInverseAppTheme for more infos");
                         }
 
-                        ThemeManager.ChangeAppStyle(this.Resources, windowAccent, theme);
-                        this.SetValue(BackgroundProperty, TryGetResource(windowAccent, theme, "WhiteColorBrush"));
-                        this.SetValue(ForegroundProperty, TryGetResource(windowAccent, theme, "BlackBrush"));
+                        ThemeManager.ChangeTheme(this.Resources, theme);
+                        this.SetValue(BackgroundProperty, TryGetResource(theme, "WhiteColorBrush"));
+                        this.SetValue(ForegroundProperty, TryGetResource(theme, "BlackBrush"));
                         break;
                     case MetroDialogColorScheme.Accented:
-                        ThemeManager.ChangeAppStyle(this.Resources, windowAccent, theme);
-                        this.SetValue(BackgroundProperty, TryGetResource(windowAccent, theme, "HighlightBrush"));
-                        this.SetValue(ForegroundProperty, TryGetResource(windowAccent, theme, "IdealForegroundColorBrush"));
+                        ThemeManager.ChangeTheme(this.Resources, theme);
+                        this.SetValue(BackgroundProperty, TryGetResource(theme, "HighlightBrush"));
+                        this.SetValue(ForegroundProperty, TryGetResource(theme, "IdealForegroundColorBrush"));
                         break;
                 }
             }
@@ -207,7 +272,7 @@ namespace MahApps.Metro.Controls.Dialogs
             if (this.ParentDialogWindow != null)
             {
                 this.ParentDialogWindow.SetValue(BackgroundProperty, this.Background);
-                var glowBrush = TryGetResource(windowAccent, theme, "AccentColorBrush");
+                var glowBrush = TryGetResource(theme, "AccentColorBrush");
                 if (glowBrush != null)
                 {
                     this.ParentDialogWindow.SetValue(MetroWindow.GlowBrushProperty, glowBrush);
@@ -223,7 +288,7 @@ namespace MahApps.Metro.Controls.Dialogs
             // nothing here
         }
 
-        private static Tuple<AppTheme, Accent> DetectTheme(BaseMetroDialog dialog)
+        private static MahApps.Metro.Theme DetectTheme(BaseMetroDialog dialog)
         {
             if (dialog == null)
             {
@@ -232,8 +297,8 @@ namespace MahApps.Metro.Controls.Dialogs
 
             // first look for owner
             var window = dialog.OwningWindow ?? dialog.TryFindParent<MetroWindow>();
-            var theme = window != null ? ThemeManager.DetectAppStyle(window) : null;
-            if (theme?.Item2 != null)
+            var theme = window != null ? ThemeManager.DetectTheme(window) : null;
+            if (theme != null)
             {
                 return theme;
             }
@@ -242,19 +307,20 @@ namespace MahApps.Metro.Controls.Dialogs
             if (Application.Current != null)
             {
                 var mainWindow = Application.Current.MainWindow as MetroWindow;
-                theme = mainWindow != null ? ThemeManager.DetectAppStyle(mainWindow) : null;
-                if (theme?.Item2 != null)
+                theme = mainWindow != null ? ThemeManager.DetectTheme(mainWindow) : null;
+                if (theme != null)
                 {
                     return theme;
                 }
 
                 // oh no, now look at application resource
-                theme = ThemeManager.DetectAppStyle(Application.Current);
-                if (theme?.Item2 != null)
+                theme = ThemeManager.DetectTheme(Application.Current);
+                if (theme != null)
                 {
                     return theme;
                 }
             }
+
             return null;
         }
 
@@ -297,17 +363,26 @@ namespace MahApps.Metro.Controls.Dialogs
         {
             if (this.OnRequestClose())
             {
-                //Technically, the Dialog is /always/ inside of a MetroWindow.
-                //If the dialog is inside of a user-created MetroWindow, not one created by the external dialog APIs.
+                // Technically, the Dialog is /always/ inside of a MetroWindow.
+                // If the dialog is inside of a user-created MetroWindow, not one created by the external dialog APIs.
                 if (this.ParentDialogWindow == null)
                 {
-                    //This is from a user-created MetroWindow
-                    return DialogManager.HideMetroDialogAsync(this.OwningWindow, this);
+                    // this is very bad, or the user called the close event before we can do this
+                    if (this.OwningWindow == null)
+                    {
+                        Trace.TraceWarning($"{this}: Can not request async closing, because the OwningWindow is already null. This can maybe happen if the dialog was closed manually.");
+                        return Task.Factory.StartNew(() => { });
+                    }
+
+                    // This is from a user-created MetroWindow
+                    return this.OwningWindow.HideMetroDialogAsync(this);
                 }
 
-                //This is from a MetroWindow created by the external dialog APIs.
-                return this._WaitForCloseAsync().ContinueWith(x => { this.ParentDialogWindow.Dispatcher.Invoke(new Action(() => { this.ParentDialogWindow.Close(); })); });
+                // This is from a MetroWindow created by the external dialog APIs.
+                return this.WaitForCloseAsync()
+                           .ContinueWith(x => { this.ParentDialogWindow.Dispatcher.Invoke(() => { this.ParentDialogWindow.Close(); }); });
             }
+
             return Task.Factory.StartNew(() => { });
         }
 
@@ -353,7 +428,7 @@ namespace MahApps.Metro.Controls.Dialogs
             return tcs.Task;
         }
 
-        public Task _WaitForCloseAsync()
+        public Task WaitForCloseAsync()
         {
             TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
 
